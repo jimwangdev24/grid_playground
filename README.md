@@ -43,16 +43,6 @@ npm run lint
 
 Linting is handled by [Oxlint](https://oxc.rs), configured in [.oxlintrc.json](.oxlintrc.json).
 
-## Deployment
-
-Build a static production bundle with:
-
-```
-npm run build
-```
-
-The output lands in `dist/` and can be served from any static file host (Vercel, Netlify, GitHub Pages, etc.). Preview the production build locally with `npm run preview`.
-
 ## Built With
 
 * [React](https://react.dev/) - UI library
