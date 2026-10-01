@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import Controls from './components/Controls.jsx'
 import GridPreview from './components/GridPreview.jsx'
 import CodeExportPanel from './components/CodeExportPanel.jsx'
-import { randomLayout } from './randomize.js'
 
 
 const STORAGE_KEY = 'grid-playground'
@@ -32,7 +31,7 @@ const makeCard = (overrides = {}) => ({
 })
 
 const DEFAULT_GRID = { columns: 4, gap: 16, rowHeight: 120 }
-const DEFAULT_STYLE = { radius: 24, padding: 24, shadow: 1 }
+const DEFAULT_STYLE = { radius: 16, padding: 16, shadow: 1 }
 
 // Default layout mirrors the bento reference: one dark hero, a wide media
 // card, and two accent tiles.
@@ -67,15 +66,15 @@ function App() {
   )
   const [selectedId, setSelectedId] = useState(null)
   const [customTones, setCustomTones] = useState(saved?.customTones ?? [])
+  const [showExport, setShowExport] = useState(false)
 
   // persist the whole design so a refresh doesn't wipe it
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cardStyle, cards, customTones }))
   }, [grid, cardStyle, cards, customTones])
-  const [showExport, setShowExport] = useState(false)
 
   // functional updates throughout: several cards can patch state in the same
-  // tick (auto-grow after Randomize), and stale closures would drop writes
+  // tick (auto-grow), and stale closures would drop writes
   const updateCard = (id, patch) =>
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)))
 
@@ -112,14 +111,10 @@ function App() {
       return next
     })
 
-  const randomize = () => {
-    setCards(randomLayout().map(makeCard))
-    setSelectedId(null)
-  }
-
   const reset = () => {
     setGrid(DEFAULT_GRID)
     setCardStyle(DEFAULT_STYLE)
+    nextId = 1 // every card is replaced, so ids can start over
     setCards(defaultCards())
     setCustomTones([])
     setSelectedId(null)
@@ -131,8 +126,8 @@ function App() {
   const selectedCard = cards.find((c) => c.id === selectedId)
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-350 flex-col gap-4 p-4 md:p-6">
-      <header className="flex items-center justify-between rounded-2xl bg-white px-6 py-4 shadow-sm">
+    <section className="mx-auto flex min-h-screen max-w-350 flex-col gap-4 p-4 md:p-6">
+      <header className="flex items-center justify-between rounded-xl bg-white px-6 py-4 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="grid size-9 place-items-center rounded-full bg-ink text-sm font-bold text-lime">
             G
@@ -140,12 +135,6 @@ function App() {
           <h1 className="text-lg font-semibold tracking-tight">Grid Playground</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={randomize}
-            className="rounded-full bg-lime px-4 py-2.5 text-sm font-medium text-ink transition-[filter] hover:brightness-95"
-          >
-            Randomize
-          </button>
           <button
             onClick={reset}
             className="rounded-full px-3 py-2.5 text-sm font-medium text-ink/50 transition-colors hover:bg-ink/5 hover:text-ink"
@@ -187,7 +176,7 @@ function App() {
           {showExport && <CodeExportPanel grid={grid} cardStyle={cardStyle} cards={cards} />}
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

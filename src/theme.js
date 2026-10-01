@@ -1,5 +1,5 @@
 // Single source of truth for card tones + shadows, shared by the live
-// preview (classes) and the code exporter (raw CSS values).
+// preview and the code exporter.
 export const TONES = {
   white: { label: 'White', bg: '#ffffff', text: '#1e1e1e' },
   dark: { label: 'Dark', bg: '#1e1e1e', text: '#ffffff' },
@@ -9,9 +9,11 @@ export const TONES = {
 
 // A card's tone is either a TONES key or a custom "#rrggbb" hex. For custom
 // colors, pick black or white text by perceived luminance for contrast.
+const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+
 export function toneStyle(tone) {
   if (TONES[tone]) return TONES[tone]
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(tone.slice(i, i + 2), 16))
+  const [r, g, b] = rgb(tone)
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
   return { label: tone, bg: tone, text: luminance > 0.6 ? '#1e1e1e' : '#ffffff' }
 }
@@ -24,10 +26,7 @@ export const IMAGES = seeds.map((seed) => `https://picsum.photos/seed/${seed}/64
 // Opacity of the tone-color wash over background images (keeps text readable).
 export const OVERLAY_ALPHA = 0.78
 
-export function withAlpha(hex, alpha) {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
+export const withAlpha = (hex, alpha) => `rgba(${rgb(hex).join(', ')}, ${alpha})`
 
 export const SHADOWS = [
   'none',

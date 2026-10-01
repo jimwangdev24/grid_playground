@@ -92,7 +92,7 @@ function CodeExportPanel({ grid, cardStyle, cards }) {
   const { html, css } = generateCode({ grid, cardStyle, cards })
 
   return (
-    <section className="flex flex-col gap-6 rounded-3xl bg-ink p-6 text-white shadow-lg md:flex-row">
+    <section className="flex flex-col gap-6 rounded-2xl bg-ink p-6 text-white shadow-lg md:flex-row">
       <CodeBlock label="HTML" code={html} />
       <CodeBlock label="CSS" code={css} />
     </section>

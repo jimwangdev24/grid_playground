@@ -1,5 +1,19 @@
 import { useState } from 'react'
 import { TONES, IMAGES } from '../theme.js'
+import { MAX_ROW_SPAN } from './Card.jsx'
+
+const CONTENT_TOGGLES = [
+  ['Image', 'showImage'],
+  ['Heading', 'showHeading'],
+  ['Eyebrow', 'showSubheading'],
+  ['Body', 'showBody'],
+]
+
+const Label = ({ children, className = '' }) => (
+  <span className={`text-xs font-medium tracking-widest text-white/50 uppercase ${className}`}>
+    {children}
+  </span>
+)
 
 function TonePicker({ selectedTone, customTones, onPick, onAddTone }) {
   const [draft, setDraft] = useState('#ff8552')
@@ -11,6 +25,7 @@ function TonePicker({ selectedTone, customTones, onPick, onAddTone }) {
     ...customTones.map((c) => ({ key: c, bg: c, label: c })),
   ]
 
+  //choose the color, see if the code is valided
   const add = () => {
     if (!valid) return
     const color = hex.toLowerCase()
@@ -20,7 +35,7 @@ function TonePicker({ selectedTone, customTones, onPick, onAddTone }) {
 
   return (
     <div>
-      <p className="mb-2 text-xs font-medium tracking-widest text-white/50 uppercase">Tone</p>
+      <Label className="mb-2 block">Tone</Label>
       <div className="flex flex-wrap gap-2">
         {swatches.map(({ key, bg, label }) => (
           <button
@@ -78,9 +93,7 @@ function ControlSlider({ label, value, min, max, unit = '', onChange }) {
   return (
     <label className="block">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium tracking-widest text-white/50 uppercase">
-          {label}
-        </span>
+        <Label>{label}</Label>
         <span className="rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs text-lime">
           {value}
           {unit}
@@ -101,7 +114,7 @@ function ControlSlider({ label, value, min, max, unit = '', onChange }) {
 function Stepper({ label, value, min, max, onChange }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-xs font-medium tracking-widest text-white/50 uppercase">{label}</span>
+      <Label>{label}</Label>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onChange(Math.max(min, value - 1))}
@@ -149,7 +162,7 @@ function Controls({
   const setStyle = (key) => (value) => onCardStyleChange({ ...cardStyle, [key]: value })
 
   return (
-    <aside className="flex flex-col gap-3 self-start rounded-3xl bg-ink p-4 text-white shadow-lg [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-80 lg:shrink-0 lg:overflow-y-auto">
+    <aside className="flex flex-col gap-3 self-start rounded-2xl bg-ink p-4 text-white shadow-lg [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-80 lg:shrink-0 lg:overflow-y-auto">
       {/* selected card first so the panel is visible without scrolling the sidebar */}
       {selectedCard ? (
         <Section label="Selected card" hint="Applies only to the highlighted card">
@@ -164,23 +177,27 @@ function Controls({
             label="Row span"
             value={selectedCard.rowSpan}
             min={1}
-            max={4}
+            max={MAX_ROW_SPAN}
             onChange={(v) => onCardChange({ rowSpan: v })}
           />
 
           <div>
-            <p className="mb-2 text-xs font-medium tracking-widest text-white/50 uppercase">Content</p>
+            <Label className="mb-2 block">Content</Label>
             <div className="flex flex-wrap gap-2">
-              <ToggleChip label="Image" active={selectedCard.showImage} onToggle={() => onCardChange({ showImage: !selectedCard.showImage })} />
-              <ToggleChip label="Heading" active={selectedCard.showHeading} onToggle={() => onCardChange({ showHeading: !selectedCard.showHeading })} />
-              <ToggleChip label="Eyebrow" active={selectedCard.showSubheading} onToggle={() => onCardChange({ showSubheading: !selectedCard.showSubheading })} />
-              <ToggleChip label="Body" active={selectedCard.showBody} onToggle={() => onCardChange({ showBody: !selectedCard.showBody })} />
+              {CONTENT_TOGGLES.map(([label, key]) => (
+                <ToggleChip
+                  key={key}
+                  label={label}
+                  active={selectedCard[key]}
+                  onToggle={() => onCardChange({ [key]: !selectedCard[key] })}
+                />
+              ))}
             </div>
           </div>
 
           {selectedCard.showImage && (
             <div>
-              <p className="mb-2 text-xs font-medium tracking-widest text-white/50 uppercase">Photo</p>
+              <Label className="mb-2 block">Photo</Label>
               <div className="flex flex-wrap gap-2">
                 {IMAGES.map((src, i) => (
                   <button
@@ -219,7 +236,7 @@ function Controls({
           </button>
         </Section>
       ) : (
-        <p className="rounded-2xl border border-dashed border-white/15 p-4 text-xs leading-relaxed text-white/40">
+        <p className="rounded-2xl border border-dashed border-white/15 p-4 text-xs leading-relaxed text-lime">
           Select a card in the preview to edit its span, content, and tone. Click its text to edit
           inline.
         </p>

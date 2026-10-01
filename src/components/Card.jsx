@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { toneStyle, withAlpha, OVERLAY_ALPHA, SHADOWS, IMAGES } from '../theme.js'
 
-const MAX_ROW_SPAN = 4
+export const MAX_ROW_SPAN = 4
 
 // id of the card being dragged; lets targets skip the "drop here" outline on
 // the source card and distinguishes card drags from stray text drags
