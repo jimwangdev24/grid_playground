@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Controls from './components/Controls.jsx'
 import GridPreview from './components/GridPreview.jsx'
 import CodeExportPanel from './components/CodeExportPanel.jsx'
+import { CARD_DEFAULTS, DEFAULT_PRESET } from './presets.js'
 
 
 const STORAGE_KEY = 'grid-playground'
@@ -13,49 +14,11 @@ try {
 }
 
 let nextId = saved?.cards?.length ? Math.max(...saved.cards.map((c) => c.id)) + 1 : 1
-const makeCard = (overrides = {}) => ({
-  id: nextId++,
-  tone: 'white',
-  colSpan: 1,
-  rowSpan: 1,
-  image: 0,
-  imageBg: false,
-  showImage: false,
-  showHeading: true,
-  showSubheading: false,
-  showBody: false,
-  heading: 'Card title',
-  subheading: 'Eyebrow label',
-  body: 'Short supporting copy for this card.',
-  ...overrides,
-})
+const makeCard = (overrides = {}) => ({ id: nextId++, ...CARD_DEFAULTS, ...overrides })
 
-const DEFAULT_GRID = { columns: 4, gap: 16, rowHeight: 120 }
-const DEFAULT_STYLE = { radius: 16, padding: 16, shadow: 1 }
-
-// Default layout mirrors the bento reference: one dark hero, a wide media
-// card, and two accent tiles.
-const defaultCards = () => [
-  makeCard({
-    tone: 'dark',
-    colSpan: 2,
-    rowSpan: 2,
-    showSubheading: true,
-    subheading: 'More offers',
-    heading: 'There is something else for you',
-  }),
-  makeCard({
-    colSpan: 2,
-    rowSpan: 2,
-    showImage: true,
-    image: 1,
-    showSubheading: true,
-    subheading: 'World of hearing technology',
-    heading: 'View our blog',
-  }),
-  makeCard({ tone: 'lavender', heading: 'About us', showSubheading: true, subheading: 'Discover our history' }),
-  makeCard({ tone: 'lime', heading: 'Contact us', showSubheading: true, subheading: 'Have some questions?' }),
-]
+const DEFAULT_GRID = DEFAULT_PRESET.grid
+const DEFAULT_STYLE = DEFAULT_PRESET.cardStyle
+const defaultCards = () => DEFAULT_PRESET.cards.map((card) => makeCard(card))
 
 function App() {
   const [grid, setGrid] = useState(saved?.grid ?? DEFAULT_GRID)
@@ -65,13 +28,14 @@ function App() {
     saved?.cards ? saved.cards.map((c) => makeCard(c)) : defaultCards(),
   )
   const [selectedId, setSelectedId] = useState(null)
-  const [customTones, setCustomTones] = useState(saved?.customTones ?? [])
+  const [customTones, setCustomTones] = useState(saved?.customTones ?? (saved?.cards ? [] : [...DEFAULT_PRESET.customTones]))
+  const [presetId, setPresetId] = useState(saved?.presetId ?? (saved?.cards ? null : DEFAULT_PRESET.id))
   const [showExport, setShowExport] = useState(false)
 
   // persist the whole design so a refresh doesn't wipe it
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cardStyle, cards, customTones }))
-  }, [grid, cardStyle, cards, customTones])
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cardStyle, cards, customTones, presetId }))
+  }, [grid, cardStyle, cards, customTones, presetId])
 
   // functional updates throughout: several cards can patch state in the same
   // tick (auto-grow), and stale closures would drop writes
@@ -116,8 +80,19 @@ function App() {
     setCardStyle(DEFAULT_STYLE)
     nextId = 1 // every card is replaced, so ids can start over
     setCards(defaultCards())
-    setCustomTones([])
+    setCustomTones([...DEFAULT_PRESET.customTones])
+    setPresetId(DEFAULT_PRESET.id)
     setSelectedId(null)
+  }
+
+  const applyPreset = (preset) => {
+    setGrid({ ...preset.grid })
+    setCardStyle({ ...preset.cardStyle })
+    // Generate fresh IDs so selection, text fields and drag state cannot leak across layouts.
+    setCards(preset.cards.map((card) => makeCard(card)))
+    setCustomTones([...preset.customTones])
+    setSelectedId(null)
+    setPresetId(preset.id)
   }
 
   const addTone = (hex) =>
@@ -126,8 +101,8 @@ function App() {
   const selectedCard = cards.find((c) => c.id === selectedId)
 
   return (
-    <section className="mx-auto flex min-h-screen max-w-350 flex-col gap-4 p-4 md:p-6">
-      <header className="flex items-center justify-between rounded-xl bg-white px-6 py-4 shadow-sm">
+    <section className="mx-auto flex max-w-350 flex-col gap-4 p-4 max-lg:h-dvh md:p-6 lg:min-h-screen">
+      <header className="flex shrink-0 items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm sm:px-6 sm:py-4">
         <div className="flex items-center gap-3">
           <span className="grid size-9 place-items-center rounded-full bg-ink text-sm font-bold text-lime">
             G
@@ -137,21 +112,32 @@ function App() {
         <div className="flex items-center gap-2">
           <button
             onClick={reset}
-            className="rounded-full px-3 py-2.5 text-sm font-medium text-ink/50 transition-colors hover:bg-ink/5 hover:text-ink"
+            className="rounded-full px-4 py-2.5 text-sm font-medium text-ink ring-1 ring-ink/15 transition-colors ring-inset hover:bg-ink/5 sm:px-5"
           >
             Reset
           </button>
           <button
             onClick={() => setShowExport(!showExport)}
-            className="rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink/80"
+            className="rounded-full bg-ink px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink/80 sm:px-5"
           >
-            {showExport ? 'Hide code' : 'Export code'}
+            {/* both labels share one grid cell, so the button keeps the wider width and the header doesn't shift */}
+            {[['lg:hidden', 'Export', 'Close'], ['max-lg:hidden', 'Export code', 'Hide code']].map(([cls, off, on]) => (
+              <span key={off} className={`grid justify-items-center ${cls}`}>
+                <span className={`[grid-area:1/1] ${showExport ? 'invisible' : ''}`}>{off}</span>
+                <span className={`[grid-area:1/1] ${showExport ? '' : 'invisible'}`}>{on}</span>
+              </span>
+            ))}
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+      {/* mobile: page is locked to the viewport; preview and controls split it and scroll on their own */}
+      <div className="relative flex flex-1 flex-col gap-4 max-lg:min-h-0 lg:flex-row">
         <Controls
+          presetDesign={{ grid, cardStyle, cards, customTones }}
+          presetId={presetId}
+          onApplyPreset={applyPreset}
+          onPresetIdChange={setPresetId}
           grid={grid}
           onGridChange={setGrid}
           cardStyle={cardStyle}
@@ -162,7 +148,8 @@ function App() {
           customTones={customTones}
           onAddTone={addTone}
         />
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
+        {/* preview first on mobile so it isn't buried under the controls */}
+        <div className="order-first flex min-w-0 flex-1 flex-col gap-4 max-lg:min-h-0 max-lg:overflow-y-auto lg:order-none">
           <GridPreview
             grid={grid}
             cardStyle={cardStyle}

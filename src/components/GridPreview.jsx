@@ -22,7 +22,7 @@ function GridPreview({ grid, cardStyle, cards, selectedId, onSelect, onCardChang
 
   return (
     <main
-      className="dotted flex-1 rounded-2xl bg-white/40 p-4 shadow-sm ring-1 ring-ink/5 md:p-6"
+      className="dotted flex-1 rounded-2xl bg-white/40 p-2 shadow-sm ring-1 ring-ink/5 sm:p-4 md:p-6"
       onClick={() => onSelect(null)}
       onDragOver={(e) => {
         e.preventDefault()
@@ -30,8 +30,10 @@ function GridPreview({ grid, cardStyle, cards, selectedId, onSelect, onCardChang
       }}
       onDrop={dropOnCanvas}
     >
+      {/* ponytail: zoom shrinks rows, gaps, text and padding uniformly on phones,
+          so Card's auto-grow overflow check sees the same ratios as desktop */}
       <div
-        className="grid"
+        className="grid max-sm:[zoom:0.6]"
         style={{
           gridTemplateColumns: `repeat(${grid.columns}, minmax(0, 1fr))`,
           gridAutoRows: `${grid.rowHeight}px`,

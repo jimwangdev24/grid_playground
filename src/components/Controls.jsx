@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { TONES, IMAGES } from '../theme.js'
 import { MAX_ROW_SPAN } from './Card.jsx'
+import PresetPicker from './PresetPicker.jsx'
 
 const CONTENT_TOGGLES = [
   ['Image', 'showImage'],
@@ -148,6 +149,10 @@ function ToggleChip({ label, active, onToggle }) {
 }
 
 function Controls({
+  presetDesign,
+  presetId,
+  onApplyPreset,
+  onPresetIdChange,
   grid,
   onGridChange,
   cardStyle,
@@ -162,8 +167,8 @@ function Controls({
   const setStyle = (key) => (value) => onCardStyleChange({ ...cardStyle, [key]: value })
 
   return (
-    <aside className="flex flex-col gap-3 self-start rounded-2xl bg-ink p-4 text-white shadow-lg [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-80 lg:shrink-0 lg:overflow-y-auto">
-      {/* selected card first so the panel is visible without scrolling the sidebar */}
+    <aside className="flex w-full flex-col gap-3 self-start max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto max-lg:*:shrink-0 rounded-2xl bg-ink p-4 text-white shadow-lg [scrollbar-color:rgba(255,255,255,0.25)_transparent] [scrollbar-width:thin] lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:w-80 lg:shrink-0 lg:overflow-y-auto">
+      <PresetPicker design={presetDesign} presetId={presetId} onApply={onApplyPreset} onPresetIdChange={onPresetIdChange} />
       {selectedCard ? (
         <Section label="Selected card" hint="Applies only to the highlighted card">
           <Stepper
