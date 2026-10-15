@@ -60,25 +60,38 @@ function generateCode({ grid, cardStyle, cards }) {
 }
 
 function CodeBlock({ label, code }) {
-  const [copied, setCopied] = useState(false)
+  const [status, setStatus] = useState(null) // null | 'copied' | 'failed'
 
+  // clipboard API is missing on non-HTTPS pages (e.g. dev server via LAN IP) and can be
+  // denied by permissions — show the failure instead of silently doing nothing
   const copy = async () => {
-    await navigator.clipboard.writeText(code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    try {
+      await navigator.clipboard.writeText(code)
+      setStatus('copied')
+    } catch {
+      setStatus('failed')
+    }
+    setTimeout(() => setStatus(null), 1500)
   }
 
   return (
     <div className="min-w-0 flex-1">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-xs font-medium tracking-widest text-white/50 uppercase">{label}</span>
+        {/* mobile: 44px min touch target (WCAG 2.5.5 / Apple HIG); aria-live announces the result */}
         <button
           onClick={copy}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-            copied ? 'bg-lime text-ink' : 'bg-white/10 text-white hover:bg-white/20'
+          aria-live="polite"
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime max-lg:min-h-11 max-lg:min-w-11 max-lg:px-5 max-lg:text-sm ${
+            status === 'copied'
+              ? 'bg-lime text-ink'
+              : status === 'failed'
+                ? 'bg-red-400 text-ink'
+                : 'bg-white/10 text-white hover:bg-white/20'
           }`}
         >
-          {copied ? 'Copied!' : 'Copy'}
+          {status === 'copied' ? 'Copied!' : status === 'failed' ? 'Copy failed' : 'Copy'}
+          <span className="sr-only"> {label}</span>
         </button>
       </div>
       <pre className="max-h-80 overflow-auto rounded-xl bg-white/5 p-4 font-mono text-xs leading-relaxed text-lime/90">
@@ -92,7 +105,9 @@ function CodeExportPanel({ grid, cardStyle, cards }) {
   const { html, css } = generateCode({ grid, cardStyle, cards })
 
   return (
-    <section className="flex flex-col gap-6 rounded-2xl bg-ink p-6 text-white shadow-lg md:flex-row">
+    // mobile: overlay covering the preview + controls area (App's relative wrapper),
+    // so the header's "Hide code" stays reachable to close it
+    <section className="flex flex-col gap-6 rounded-2xl bg-ink p-6 text-white shadow-lg max-lg:absolute max-lg:inset-0 max-lg:z-50 max-lg:overflow-y-auto max-lg:shadow-2xl md:flex-row">
       <CodeBlock label="HTML" code={html} />
       <CodeBlock label="CSS" code={css} />
     </section>

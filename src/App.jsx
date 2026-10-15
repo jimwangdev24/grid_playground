@@ -126,8 +126,8 @@ function App() {
   const selectedCard = cards.find((c) => c.id === selectedId)
 
   return (
-    <section className="mx-auto flex min-h-screen max-w-350 flex-col gap-4 p-4 md:p-6">
-      <header className="flex items-center justify-between rounded-xl bg-white px-6 py-4 shadow-sm">
+    <section className="mx-auto flex max-w-350 flex-col gap-4 p-4 max-lg:h-dvh md:p-6 lg:min-h-screen">
+      <header className="flex shrink-0 items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm sm:px-6 sm:py-4">
         <div className="flex items-center gap-3">
           <span className="grid size-9 place-items-center rounded-full bg-ink text-sm font-bold text-lime">
             G
@@ -137,20 +137,27 @@ function App() {
         <div className="flex items-center gap-2">
           <button
             onClick={reset}
-            className="rounded-full px-3 py-2.5 text-sm font-medium text-ink/50 transition-colors hover:bg-ink/5 hover:text-ink"
+            className="rounded-full px-4 py-2.5 text-sm font-medium text-ink ring-1 ring-ink/15 transition-colors ring-inset hover:bg-ink/5 sm:px-5"
           >
             Reset
           </button>
           <button
             onClick={() => setShowExport(!showExport)}
-            className="rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink/80"
+            className="rounded-full bg-ink px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink/80 sm:px-5"
           >
-            {showExport ? 'Hide code' : 'Export code'}
+            {/* both labels share one grid cell, so the button keeps the wider width and the header doesn't shift */}
+            {[['lg:hidden', 'Export', 'Close'], ['max-lg:hidden', 'Export code', 'Hide code']].map(([cls, off, on]) => (
+              <span key={off} className={`grid justify-items-center ${cls}`}>
+                <span className={`[grid-area:1/1] ${showExport ? 'invisible' : ''}`}>{off}</span>
+                <span className={`[grid-area:1/1] ${showExport ? '' : 'invisible'}`}>{on}</span>
+              </span>
+            ))}
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 lg:flex-row">
+      {/* mobile: page is locked to the viewport; preview and controls split it and scroll on their own */}
+      <div className="relative flex flex-1 flex-col gap-4 max-lg:min-h-0 lg:flex-row">
         <Controls
           grid={grid}
           onGridChange={setGrid}
@@ -162,7 +169,8 @@ function App() {
           customTones={customTones}
           onAddTone={addTone}
         />
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
+        {/* preview first on mobile so it isn't buried under the controls */}
+        <div className="order-first flex min-w-0 flex-1 flex-col gap-4 max-lg:min-h-0 max-lg:overflow-y-auto lg:order-none">
           <GridPreview
             grid={grid}
             cardStyle={cardStyle}
