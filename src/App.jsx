@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Controls from './components/Controls.jsx'
 import GridPreview from './components/GridPreview.jsx'
 import CodeExportPanel from './components/CodeExportPanel.jsx'
+import { CARD_DEFAULTS, DEFAULT_PRESET } from './presets.js'
 
 
 const STORAGE_KEY = 'grid-playground'
@@ -13,49 +14,11 @@ try {
 }
 
 let nextId = saved?.cards?.length ? Math.max(...saved.cards.map((c) => c.id)) + 1 : 1
-const makeCard = (overrides = {}) => ({
-  id: nextId++,
-  tone: 'white',
-  colSpan: 1,
-  rowSpan: 1,
-  image: 0,
-  imageBg: false,
-  showImage: false,
-  showHeading: true,
-  showSubheading: false,
-  showBody: false,
-  heading: 'Card title',
-  subheading: 'Eyebrow label',
-  body: 'Short supporting copy for this card.',
-  ...overrides,
-})
+const makeCard = (overrides = {}) => ({ id: nextId++, ...CARD_DEFAULTS, ...overrides })
 
-const DEFAULT_GRID = { columns: 4, gap: 16, rowHeight: 120 }
-const DEFAULT_STYLE = { radius: 16, padding: 16, shadow: 1 }
-
-// Default layout mirrors the bento reference: one dark hero, a wide media
-// card, and two accent tiles.
-const defaultCards = () => [
-  makeCard({
-    tone: 'dark',
-    colSpan: 2,
-    rowSpan: 2,
-    showSubheading: true,
-    subheading: 'More offers',
-    heading: 'There is something else for you',
-  }),
-  makeCard({
-    colSpan: 2,
-    rowSpan: 2,
-    showImage: true,
-    image: 1,
-    showSubheading: true,
-    subheading: 'World of hearing technology',
-    heading: 'View our blog',
-  }),
-  makeCard({ tone: 'lavender', heading: 'About us', showSubheading: true, subheading: 'Discover our history' }),
-  makeCard({ tone: 'lime', heading: 'Contact us', showSubheading: true, subheading: 'Have some questions?' }),
-]
+const DEFAULT_GRID = DEFAULT_PRESET.grid
+const DEFAULT_STYLE = DEFAULT_PRESET.cardStyle
+const defaultCards = () => DEFAULT_PRESET.cards.map((card) => makeCard(card))
 
 function App() {
   const [grid, setGrid] = useState(saved?.grid ?? DEFAULT_GRID)
@@ -65,13 +28,14 @@ function App() {
     saved?.cards ? saved.cards.map((c) => makeCard(c)) : defaultCards(),
   )
   const [selectedId, setSelectedId] = useState(null)
-  const [customTones, setCustomTones] = useState(saved?.customTones ?? [])
+  const [customTones, setCustomTones] = useState(saved?.customTones ?? (saved?.cards ? [] : [...DEFAULT_PRESET.customTones]))
+  const [presetId, setPresetId] = useState(saved?.presetId ?? (saved?.cards ? null : DEFAULT_PRESET.id))
   const [showExport, setShowExport] = useState(false)
 
   // persist the whole design so a refresh doesn't wipe it
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cardStyle, cards, customTones }))
-  }, [grid, cardStyle, cards, customTones])
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ grid, cardStyle, cards, customTones, presetId }))
+  }, [grid, cardStyle, cards, customTones, presetId])
 
   // functional updates throughout: several cards can patch state in the same
   // tick (auto-grow), and stale closures would drop writes
@@ -116,8 +80,19 @@ function App() {
     setCardStyle(DEFAULT_STYLE)
     nextId = 1 // every card is replaced, so ids can start over
     setCards(defaultCards())
-    setCustomTones([])
+    setCustomTones([...DEFAULT_PRESET.customTones])
+    setPresetId(DEFAULT_PRESET.id)
     setSelectedId(null)
+  }
+
+  const applyPreset = (preset) => {
+    setGrid({ ...preset.grid })
+    setCardStyle({ ...preset.cardStyle })
+    // Generate fresh IDs so selection, text fields and drag state cannot leak across layouts.
+    setCards(preset.cards.map((card) => makeCard(card)))
+    setCustomTones([...preset.customTones])
+    setSelectedId(null)
+    setPresetId(preset.id)
   }
 
   const addTone = (hex) =>
@@ -159,6 +134,10 @@ function App() {
       {/* mobile: page is locked to the viewport; preview and controls split it and scroll on their own */}
       <div className="relative flex flex-1 flex-col gap-4 max-lg:min-h-0 lg:flex-row">
         <Controls
+          presetDesign={{ grid, cardStyle, cards, customTones }}
+          presetId={presetId}
+          onApplyPreset={applyPreset}
+          onPresetIdChange={setPresetId}
           grid={grid}
           onGridChange={setGrid}
           cardStyle={cardStyle}

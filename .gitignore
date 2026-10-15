@@ -23,3 +23,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# User-created layout presets (local JSON storage)
+data/user-presets.json
+data/user-presets.json.tmp
